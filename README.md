@@ -8,7 +8,6 @@ Pastelly is a beautiful, interactive, and premium web application designed to he
 - **📅 Interactive Mood Calendar**: Log daily vibes, custom tags, and notes. Days highlight in pastel shades with detailed hover tooltips.
 - **🌤️ Live Weather & Clock**: Shows your local temperature and WMO weather conditions using browser Geolocation and the Open-Meteo API, alongside a glowing digital clock.
 - **🔊 Ambient Lo-Fi Synthesizer**: Native synthesizer tracks (Rain + Vinyl, Fireplace Crackle, Midnight Cafe) with an active audio visualizer.
-- **🔒 Google Identity Sign-In**: Fully integrated browser-native Google accounts chooser.
 - **👥 Collaboration & Publishing**: Invite collaborators or publish your mood boards to the public Explore Community feed.
 
 ## 🚀 How to Run Locally
