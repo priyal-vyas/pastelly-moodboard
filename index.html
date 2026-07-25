@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pastelly // Your Gravity-Free Mood Board Canvas</title>
+  <!-- Google Fonts: Montserrat (Body) & Playfair Display / Syne (Dream Kudos alternatives) + Cormorant Garamond, Pacifico, Courier Prime, Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Syne:wght@600;700;800&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Pacifico&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- HTML2Canvas CDN for PNG Board Exports -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- Google Identity Services SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- Background Floating Particle Canvas -->
+  <canvas id="gravity-canvas"></canvas>
+
+  <!-- Fullscreen File Drag and Drop Overlay -->
+  <div id="drag-drop-overlay" class="drag-drop-overlay hidden">
+    <div class="overlay-box glass">
+      <i data-lucide="image-plus" class="overlay-icon pulse-fast"></i>
+      <h2 class="font-decorative">Drop your image here to pin it!</h2>
+      <p>Colors and textures will be extracted automatically into your canvas.</p>
+    </div>
+  </div>
+
+  <!-- Toast Notification Message -->
+  <div id="toast-notification" class="toast hidden">
+    <i data-lucide="check-circle" class="toast-icon"></i>
+    <span id="toast-message">Copied to clipboard!</span>
+  </div>
+
+  <div class="app-container">
+    
+    <!-- Header & Navigation Bar -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-container">
+          <div class="logo-icon-wrap">
+            <i data-lucide="wind" class="logo-icon floating-slow"></i>
+          </div>
+          <div class="logo-meta">
+            <span class="logo-text">Pastelly</span>
+            <span class="logo-tagline">Your Gravity-Free Canvas</span>
+          </div>
+        </div>
+        <div class="search-bar-wrap">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="text" id="search-input" placeholder="Search cards, colors, stickers, or tags..." />
+          <span class="search-shortcut">⌘K</span>
+        </div>
+      </div>
+      
+      <div class="header-right">
+        <!-- Anti-Gravity Main Toggle Switch -->
+        <div class="gravity-toggle-wrapper">
+          <span class="toggle-label"><i data-lucide="orbit" class="toggle-icon"></i> Anti-Gravity</span>
+          <label class="switch">
+            <input type="checkbox" id="gravity-mode-checkbox">
+            <span class="slider round"></span>
+          </label>
+        </div>
+
+        <button class="btn btn-secondary" id="btn-theme-toggle" title="Toggle Cozy Mode">
+          <i data-lucide="sparkles"></i>
+          <span>Dreamy Mode</span>
+        </button>
+
+        <button class="btn btn-secondary" id="btn-tape-connect-mode" title="Connect cards with Washi Tape">
+          <i data-lucide="link"></i>
+          <span>Tape Mode</span>
+        </button>
+
+        <button class="btn btn-secondary" id="btn-quote-generator-trigger" title="Create a Polaroid Quote card">
+          <i data-lucide="quote"></i>
+          <span>Cozy Quote</span>
+        </button>
+
+        <button class="btn btn-secondary btn-icon-only" id="btn-toggle-bujo-grid" title="Toggle Dot-Journal Grid">
+          <i data-lucide="grid"></i>
+        </button>
+
+        <button class="btn btn-secondary" id="btn-media-import-trigger" title="Import from Pinterest">
+          <i data-lucide="image-plus"></i>
+          <span>Import Media</span>
+        </button>
+
+        <button class="btn btn-secondary btn-icon-only" id="btn-upload-trigger" title="Upload Desktop Image">
+          <i data-lucide="upload"></i>
+        </button>
+
+        <button class="btn btn-accent" id="btn-add-pin-trigger">
+          <i data-lucide="plus"></i>
+          <span>Add Pin</span>
+        </button>
+        
+        <div class="divider"></div>
+        
+        <!-- Clickable Profile Avatar Widget -->
+        <div class="profile-widget" id="profile-widget-trigger" title="Edit Profile Details">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="Elena" class="avatar profile-avatar" id="header-profile-avatar" />
+          <i data-lucide="chevron-down" class="profile-chevron"></i>
+        </div>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <!-- Sidebar / Boards & Active Statistics -->
+      <aside class="app-sidebar">
+        <!-- Cozy Status Panel (Weather & Clock) -->
+        <div class="sidebar-section" style="margin-bottom: 20px;">
+          <div class="cozy-status-card glass" style="padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 16px; border: 1px solid var(--panel-border); background: rgba(255, 255, 255, 0.2);">
+            <!-- Weather Section -->
+            <div id="weather-widget" style="display: flex; align-items: center; gap: 8px; flex: 1.1; overflow: hidden;">
+              <span id="weather-icon" style="font-size: 24px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));">🌤️</span>
+              <div style="display: flex; flex-direction: column; overflow: hidden;">
+                <span id="weather-temp" style="font-size: 13px; font-weight: 750; color: var(--text-brand); white-space: nowrap;">--°C</span>
+                <span id="weather-desc" style="font-size: 9px; color: var(--text-secondary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px;">Locating...</span>
+              </div>
+            </div>
+            <!-- Vertical Divider -->
+            <div style="width: 1px; height: 32px; background: var(--panel-border); flex-shrink: 0;"></div>
+            <!-- Glowing Digital Clock -->
+            <div id="clock-widget" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; flex: 0.9; flex-shrink: 0;">
+              <span id="clock-time" class="font-decorative" style="font-size: 15px; color: var(--pastel-pink-highlight); text-shadow: 0 0 10px rgba(255, 176, 185, 0.6); font-weight: 800; letter-spacing: 0.5px;">12:00</span>
+              <span id="clock-ampm" style="font-size: 9px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; margin-top: 1px;">AM</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Boards List Section -->
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">Mood Boards</h3>
+          <div class="board-list" id="sidebar-boards-list">
+            <!-- Dynamic Boards list goes here -->
+          </div>
+        </div>
+
+        <!-- Sharing & Collaboration Sidebar Shortcuts -->
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">Quick Actions</h3>
+          <div class="quick-actions-list">
+            <button class="btn btn-outline btn-block" id="btn-community-trigger">
+              <i data-lucide="compass"></i>
+              <span>Explore Community</span>
+            </button>
+            <button class="btn btn-outline btn-block" id="btn-publish-board-trigger">
+              <i data-lucide="upload-cloud"></i>
+              <span>Publish Board</span>
+            </button>
+            <button class="btn btn-outline btn-block" id="btn-collab-trigger">
+              <i data-lucide="users"></i>
+              <span>Collaborate</span>
+            </button>
+            <button class="btn btn-outline btn-block" id="btn-share-trigger">
+              <i data-lucide="share-2"></i>
+              <span>Share Board</span>
+            </button>
+            <button class="btn btn-primary btn-block" id="btn-export-trigger">
+              <i data-lucide="download"></i>
+              <span>Export Mood Board</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Lo-Fi Ambient Audio Widget -->
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">Lo-Fi Ambient Space</h3>
+          <div class="lofi-player-card glass" style="padding: 14px; display: flex; flex-direction: column; gap: 12px; border-radius: 16px; border: 1px solid var(--panel-border); background: rgba(255, 255, 255, 0.2);">
+            <!-- Synthesizer Panel -->
+            <div id="lofi-synth-panel">
+              <div class="lofi-player-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div class="lofi-track-info" style="display: flex; flex-direction: column; gap: 2px; max-width: 70%;">
+                  <span class="track-title font-decorative" id="lofi-track-title" style="font-size:12px;">Pastel Sunset</span>
+                  <span class="track-status" id="lofi-track-status" style="font-size:8px;">Idle</span>
+                </div>
+                <button class="lofi-play-btn" id="btn-lofi-play" title="Play ambient sound" style="width:30px; height:30px;">
+                  <i data-lucide="play" id="lofi-play-icon" style="width:14px; height:14px;"></i>
+                </button>
+              </div>
+              <div class="lofi-controls" style="display: flex; flex-direction: column; gap: 8px;">
+                <div class="lofi-visualizer" id="lofi-visualizer" style="height:18px;">
+                  <div class="vis-bar"></div>
+                  <div class="vis-bar"></div>
+                  <div class="vis-bar"></div>
+                  <div class="vis-bar"></div>
+                  <div class="vis-bar"></div>
+                </div>
+                <select id="select-lofi-track" style="font-size: 9px; padding: 5px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--input-bg); color: var(--text-brand); width: 100%; outline: none; cursor: pointer;">
+                  <option value="pastel-sunset">Pastel Sunset (Rain + Vinyl)</option>
+                  <option value="cozy-fireplace">Cozy Fireplace (Crackle + Hum)</option>
+                  <option value="midnight-cafe">Midnight Café (Keys + Rain)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Weather selector -->
+            <div class="weather-select-row" style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--panel-border); padding-top: 8px; margin-top: 4px;">
+              <span style="font-size: 8px; font-weight:750; color:var(--text-secondary); text-transform:uppercase;">Weather</span>
+              <select id="select-lofi-weather" style="font-size: 9px; padding: 4px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--input-bg); color: var(--text-brand); width: 60%; outline: none; cursor: pointer;">
+                <option value="none">Clear Day ☀️</option>
+                <option value="rain">Cozy Rain 🌧️</option>
+                <option value="snow">Soft Snow ❄️</option>
+                <option value="fog">Misty Fog 🌫️</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Board Details -->
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">Board Aesthetics</h3>
+          <div class="aesthetic-info">
+            <div class="aesthetic-row">
+              <span class="lbl">Primary Palette</span>
+              <div class="color-dots" id="board-color-dots">
+                <span class="color-dot" style="background-color: #FFB0B5;" title="#FFB0B5"></span>
+                <span class="color-dot" style="background-color: #FFC6CA;" title="#FFC6CA"></span>
+                <span class="color-dot" style="background-color: #FFD3D6;" title="#FFD3D6"></span>
+                <span class="color-dot" style="background-color: #F9DCC0;" title="#F9DCC0"></span>
+              </div>
+            </div>
+            <div class="aesthetic-row">
+              <span class="lbl">Layout Preset</span>
+              <span class="val" id="board-layout-val">Pastel Masonry</span>
+            </div>
+            <div class="aesthetic-row">
+              <span class="lbl">Stickers Active</span>
+              <span class="val" id="board-stickers-count">0 Stickers</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mood Tracker Sidebar Widget -->
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">Pastel Mood Tracker</h3>
+          <div class="mood-tracker-card glass" style="padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <!-- Calendar Navigation -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+              <button id="btn-calendar-prev" style="background: none; border: none; cursor: pointer; color: var(--text-brand); display: flex; align-items: center; justify-content: center;"><i data-lucide="chevron-left" style="width: 14px; height: 14px;"></i></button>
+              <span id="calendar-month-year" class="font-decorative" style="font-size: 12px; color: var(--text-brand); font-weight: 750;">July 2026</span>
+              <button id="btn-calendar-next" style="background: none; border: none; cursor: pointer; color: var(--text-brand); display: flex; align-items: center; justify-content: center;"><i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i></button>
+            </div>
+            
+            <!-- Calendar Weekdays -->
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 8px; font-weight: 750; color: var(--text-secondary); text-transform: uppercase;">
+              <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+            </div>
+
+            <!-- Calendar Days Grid -->
+            <div id="mood-tracker-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
+              <!-- Injected dynamically via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- System Gravity Gauge Indicator -->
+        <div class="sidebar-footer">
+          <div class="gravity-gauge">
+            <div class="gauge-header">
+              <span>Gravity Force</span>
+              <span id="gravity-val">0.25G</span>
+            </div>
+            <div class="gauge-bar">
+              <div class="gauge-fill" style="width: 25%;"></div>
+            </div>
+            <div class="gauge-caption">Click to modify vector pull</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Canvas / Content Container -->
+      <main class="content-area">
+        
+        <!-- Board Summary Header -->
+        <div class="board-header-section">
+          <div class="title-meta">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <h1 class="main-title" id="active-board-title-display">SaaS Landing Page</h1>
+              <button class="btn btn-secondary btn-icon-only" id="btn-edit-board-trigger" title="Edit Board Details" style="width: 28px; height: 28px; border-radius: 50%;">
+                <i data-lucide="edit-3" style="width: 12px; height: 12px;"></i>
+              </button>
+            </div>
+            <p class="subtitle" id="active-board-desc-display">A visual mood board gathering aesthetic styles, responsive layout mockups, interactive components, and design assets for the upcoming dev cycle.</p>
+          </div>
+          <div class="board-stats">
+            <div class="stat-pill">
+              <!-- Clickable Heart icon for global Likes -->
+              <i data-lucide="heart" class="stat-heart" id="board-like-heart"></i>
+              <span id="like-count">148 Likes</span>
+            </div>
+            <div class="stat-pill">
+              <i data-lucide="eye"></i>
+              <span>1,240 Views</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expandable Floating Control Panel (Active when Anti-Gravity toggle is ON) -->
+        <div class="floating-controls-panel hidden" id="gravity-controls-panel">
+          <div class="panel-section-title">
+            <i data-lucide="sliders"></i>
+            <span>Anti-Gravity Tuning Panel</span>
+          </div>
+          <div class="controls-grid">
+            <div class="control-slider-group">
+              <div class="slider-labels">
+                <span class="slider-name">Drift Velocity</span>
+                <span class="slider-value" id="val-drift">1.0x</span>
+              </div>
+              <input type="range" id="slider-drift" min="0.1" max="3" step="0.1" value="1.0" class="glass-slider">
+            </div>
+
+            <div class="control-slider-group">
+              <div class="slider-labels">
+                <span class="slider-name">Floating Amplitude</span>
+                <span class="slider-value" id="val-amplitude">20px</span>
+              </div>
+              <input type="range" id="slider-amplitude" min="5" max="60" step="1" value="20" class="glass-slider">
+            </div>
+
+            <div class="control-slider-group">
+              <div class="slider-labels">
+                <span class="slider-name">Gravity Sensitivity</span>
+                <span class="slider-value" id="val-sensitivity">1.2x</span>
+              </div>
+              <input type="range" id="slider-sensitivity" min="0.2" max="4" step="0.1" value="1.2" class="glass-slider">
+            </div>
+            
+            <div class="control-button-group">
+              <button class="btn btn-secondary btn-block" id="btn-randomize-float">
+                <i data-lucide="dices"></i>
+                <span>Randomize Float</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Tags -->
+        <div class="filter-bar">
+          <button class="filter-tag active" data-filter="all">All Pins</button>
+          <button class="filter-tag" data-filter="layouts">Layouts</button>
+          <button class="filter-tag" data-filter="components">Components</button>
+          <button class="filter-tag" data-filter="palettes">Palettes</button>
+          <button class="filter-tag" data-filter="notes">Notes & Quotes</button>
+        </div>
+
+        <!-- Grid Container that holds mood board cards -->
+        <!-- In Grid Mode: Pinterest columns. In Float Mode: absolute boundary box. -->
+        <div class="canvas-container" id="canvas-container">
+          <div class="pinterest-grid" id="mood-board-grid">
+            <!-- Dynamic cards will be drawn here -->
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Detail Viewer Modal -->
+  <div class="modal-overlay hidden" id="detail-modal">
+    <div class="modal-container glass detail-modal-content">
+      <button class="modal-close" id="btn-close-detail"><i data-lucide="x"></i></button>
+      <div class="detail-grid">
+        <div class="detail-media" id="detail-media-container">
+          <!-- Dynamic media -->
+        </div>
+        <div class="detail-info">
+          <div class="detail-header">
+            <div class="card-author">
+              <img id="detail-author-avatar" src="" alt="Author Avatar" class="avatar-small" />
+              <div class="author-info">
+                <span id="detail-author-name" class="author-name">Elena Rostova</span>
+                <span id="detail-author-time" class="author-time">Added just now</span>
+              </div>
+            </div>
+            <button class="btn btn-save" id="btn-detail-save-card">
+              <i data-lucide="bookmark"></i>
+              <span>Save Code</span>
+            </button>
+          </div>
+          <div class="detail-body">
+            <h2 id="detail-title" class="detail-title font-decorative">Title of Card</h2>
+            <p id="detail-description" class="detail-desc">Description text...</p>
+            
+            <div id="detail-extras" class="detail-extras-panel">
+              <!-- Dominant colors, fonts, or sticker specs -->
+            </div>
+
+            <!-- Card Comments Thread Section -->
+            <div class="detail-comments-section">
+              <h4 style="font-size: 10px; font-weight: 750; text-transform: uppercase; margin-bottom: 8px; color: var(--text-brand);">Collaborator Notes (<span id="comment-count">0</span>)</h4>
+              <div class="detail-comments-list" id="detail-comments-list">
+                <!-- Dynamic comments -->
+              </div>
+              <form id="comment-form" style="display: flex; gap: 8px;">
+                <input type="text" id="comment-input" required placeholder="Add a design note..." style="flex-grow: 1; font-size: 11px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--panel-border); background: var(--input-bg); outline: none; color: var(--text-brand);" />
+                <button type="submit" class="btn btn-primary" style="height: 32px; padding: 0 14px; font-size: 11px; border-radius: 8px;">Post</button>
+              </form>
+            </div>
+          </div>
+          <div class="detail-footer">
+            <div class="tag-list" id="detail-tags"></div>
+            <div class="action-buttons-row">
+              <button class="btn btn-outline" id="btn-detail-copy-values">
+                <i data-lucide="copy"></i>
+                <span>Copy Specs</span>
+              </button>
+              <button class="btn btn-primary" id="btn-detail-delete-card">
+                <i data-lucide="trash-2"></i>
+                <span>Delete Pin</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Upload & Stickering Modal -->
+  <div class="modal-overlay hidden" id="upload-modal">
+    <div class="modal-container glass upload-modal-content">
+      <button class="modal-close" id="btn-close-upload"><i data-lucide="x"></i></button>
+      <h2 class="modal-heading font-decorative">Upload & Customize Pin</h2>
+      
+      <div class="upload-modal-grid">
+        <div class="upload-left-pane">
+          <!-- Local Upload Drop Box Area -->
+          <div class="upload-drop-box" id="modal-upload-dropbox">
+            <input type="file" id="file-uploader-input" accept="image/*" class="file-input-hidden" />
+            <div class="drop-box-content" id="drop-box-prompt">
+              <i data-lucide="image" class="drop-icon"></i>
+              <h4>Drag & drop desktop photo here</h4>
+              <p>or click to browse local storage</p>
+              <span class="file-limits">PNG, JPG, WEBP up to 5MB</span>
+            </div>
+            <!-- Client preview of the loaded file -->
+            <div class="drop-box-preview-wrap hidden" id="drop-box-preview-wrap">
+              <img id="upload-image-preview" src="" alt="Client Upload Preview" />
+              <!-- Selected Sticker Overlay Preview -->
+              <div id="preview-sticker-badge" class="sticker-badge hidden">🌸 Bloom</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="upload-right-pane">
+          <form id="upload-pin-form" class="modal-form">
+            <div class="form-group">
+              <label for="upload-title">Pin Title</label>
+              <input type="text" id="upload-title" required placeholder="e.g., Warm Aesthetic Swatch" />
+            </div>
+
+            <div class="form-group">
+              <label for="upload-desc">Caption / Description</label>
+              <textarea id="upload-desc" rows="2" placeholder="Describe the aesthetic, layout wireframe nodes, or details..."></textarea>
+            </div>
+
+            <!-- EXIF Date Capture Option -->
+            <div class="form-group" id="exif-date-group" style="display: none; flex-direction: row; align-items: center; gap: 8px; margin: 4px 0;">
+              <input type="checkbox" id="upload-show-date" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" />
+              <label for="upload-show-date" style="margin: 0; text-transform: none; font-size: 11px; cursor: pointer;">Show original capture date: <span id="extracted-date-label" style="font-weight: 700; color: var(--pastel-pink-highlight);"></span></label>
+            </div>
+
+            <!-- Dynamic Stickers Selector based on Theme -->
+            <div class="form-group">
+              <label>Select Aesthetic Sticker</label>
+              <div class="sticker-selector-row" id="upload-sticker-selector-row">
+                <!-- Injected dynamically via JS based on Active Board Theme -->
+              </div>
+            </div>
+
+            <!-- Font / Caption Style controls with multiple fonts -->
+            <div class="form-group">
+              <label>Card Styling Options</label>
+              <div class="styling-options-row">
+                <div class="option-select-group">
+                  <label for="styling-font">Font Style</label>
+                  <select id="styling-font" style="cursor: pointer;">
+                    <option value="serif">Dream Kudos (Playfair)</option>
+                    <option value="cormorant">Cormorant Garamond (Classic)</option>
+                    <option value="pacifico">Pacifico (Handwriting)</option>
+                    <option value="courier">Courier Prime (Monospace)</option>
+                    <option value="syne">Syne (Modern Display)</option>
+                    <option value="outfit">Outfit (Rounded Clean)</option>
+                    <option value="sans">Montserrat (Sans)</option>
+                  </select>
+                </div>
+                <div class="option-select-group">
+                  <label for="styling-border">Border</label>
+                  <select id="styling-border" style="cursor: pointer;">
+                    <option value="none">Normal (None)</option>
+                    <option value="solid">Solid Pastel</option>
+                    <option value="dashed">Dashed Outline</option>
+                    <option value="double">Double Border</option>
+                  </select>
+                </div>
+                <div class="option-select-group">
+                  <label for="styling-color">Bg Shade</label>
+                  <select id="styling-color" style="cursor: pointer;">
+                    <option value="default">Default Glass</option>
+                    <option value="pink-soft">Soft Pink</option>
+                    <option value="peach">Peach Tint</option>
+                    <option value="cream">Warm Cream</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group-row" style="display: flex; gap: 8px;">
+              <div class="form-group" style="flex: 2;">
+                <label for="upload-tags">Tags (comma-separated)</label>
+                <input type="text" id="upload-tags" placeholder="e.g., retro, wireframe, warm" />
+              </div>
+              <div class="form-group" style="flex: 1;">
+                <label for="upload-size">Card Width</label>
+                <select id="upload-size" style="cursor: pointer;">
+                  <option value="normal">Standard</option>
+                  <option value="wide">Double Wide</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">Pin to Pastelly Board</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Profile Editor Modal -->
+  <div class="modal-overlay hidden" id="profile-modal">
+    <div class="modal-container glass small-modal">
+      <button class="modal-close" id="btn-close-profile"><i data-lucide="x"></i></button>
+      <h2 class="modal-heading font-decorative">Edit Profile Settings</h2>
+      <form id="profile-form" class="modal-form">
+        <div class="form-group" style="text-align: center;">
+          <label>Profile Picture</label>
+          <div class="profile-upload-circle" id="profile-upload-circle" style="cursor: pointer; margin: 10px auto 20px auto; width: 90px; height: 90px; border-radius: 50%; overflow: hidden; border: 3px solid var(--pastel-pink-highlight); position: relative; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm);">
+            <img id="profile-edit-preview" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" style="width: 100%; height: 100%; object-fit: cover;" />
+            <div style="position: absolute; bottom: 0; width: 100%; background: rgba(61, 30, 40, 0.65); color: white; font-size: 8px; font-weight: 700; padding: 3px 0; text-align: center; letter-spacing: 0.05em;">EDIT PHOTO</div>
+          </div>
+          <input type="file" id="profile-file-input" accept="image/*" style="display: none;" />
+        </div>
+        <div class="form-group">
+          <label for="profile-name-input">Display Name</label>
+          <input type="text" id="profile-name-input" required placeholder="Elena Rostova" value="Elena Rostova" />
+        </div>
+        <div class="form-group">
+          <label for="profile-role-input">Title / Role</label>
+          <input type="text" id="profile-role-input" required placeholder="Lead Designer" value="Lead Designer" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">Save Profile Details</button>
+        <button type="button" class="btn btn-outline btn-block" id="btn-profile-signout" style="margin-top: 8px; border-color: rgba(255, 100, 100, 0.4); color: #d06060;">Sign Out / Switch Account</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Explore Community Public Boards Modal -->
+  <div class="modal-overlay hidden" id="community-modal">
+    <div class="modal-container glass community-modal-content" style="width: 860px; padding: 32px; max-height: 90vh; overflow-y: auto;">
+      <button class="modal-close" id="btn-close-community"><i data-lucide="x"></i></button>
+      <h2 class="modal-heading font-decorative">Explore Public Mood Boards</h2>
+      <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5;">Get inspired by other developers and designers! Double-click a card or click "Import" to load any board into your session.</p>
+      
+      <div class="community-grid" id="community-grid-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+        <!-- Public boards rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Text Note Modal -->
+  <div class="modal-overlay hidden" id="add-pin-modal">
+    <div class="modal-container glass small-modal">
+      <button class="modal-close" id="btn-close-add-pin"><i data-lucide="x"></i></button>
+      <h2 class="modal-heading font-decorative">Create Text Note</h2>
+      <form id="add-pin-form" class="modal-form">
+        <div class="form-group">
+          <label for="pin-title">Title</label>
+          <input type="text" id="pin-title" required placeholder="e.g., Code Layout Guidelines" />
+        </div>
+        <div class="form-group">
+          <label for="pin-category">Category</label>
+          <select id="pin-category" required>
+            <option value="notes">Note & Quote Card</option>
+            <option value="layouts">Design Wireframe Wire</option>
+            <option value="components">UI Component Specs</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="pin-desc">Note Content / Description</label>
+          <textarea id="pin-desc" rows="4" required placeholder="Type your text note, design principles, or CSS snippets here..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="pin-tags">Tags (comma-separated)</label>
+          <input type="text" id="pin-tags" placeholder="e.g., specs, quotes, css" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Add to Board</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Share Board Modal -->
+  <div class="modal-overlay hidden" id="share-modal">
+    <div class="modal-container glass small-modal">
+      <button class="modal-close" id="btn-close-share"><i data-lucide="x"></i></button>
+      <h2 class="modal-heading font-decorative">Share Mood Board</h2>
+      <p class="modal-desc" style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">Generate a live public share link for collaborators to view your gravity-free canvas.</p>
+      
+      <div class="share-link-box">
+        <input type="text" id="share-link-input" readonly value="https://pastelly.design/board/saas-landing-2026" />
+        <button class="btn btn-primary" id="btn-copy-share-link">
+          <i data-lucide="copy"></i>
+          <span>Copy</span>
+        </button>
+      </div>
+
+      <div class="social-preview-wrap">
+        <span class="preview-label">Live Social Preview</span>
+        <div class="social-card glass">
+          <div class="social-header">
+            <span class="social-title font-decorative">Pastelly | SaaS Landing 2026</span>
+            <span class="social-desc">Explore Elena's floating mood board. Styled in cozy pastel pinks & peach colors.</span>
+          </div>
+          <div class="social-footer">
+            <span class="domain">pastelly.design</span>
+            <span class="tagline">Interactive Gravity Canvas</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collaboration Modal -->
+  <div class="modal-overlay hidden" id="collab-modal">
+    <div class="modal-container glass small-modal">
+      <button class="modal-close" id="btn-close-collab"><i data-lucide="x"></i></button>
+      <h2 class="modal-heading font-decorative">Invite Collaborators</h2>
+      <p class="modal-desc" style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">Add developers and designers to drag, resize, and float elements in real time.</p>
+      
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label for="collab-email">Invite via email</label>
+        <div class="collab-input-row" style="display: flex; gap: 8px;">
+          <input type="email" id="collab-email" placeholder="colleague@domain.com" style="flex-grow: 1;" />
+          <button class="btn btn-primary" id="btn-send-collab-invite">Send</button>
+        </div>
+      </div>
+
+      <h3 style="font-size: 11px; text-transform: uppercase; color: var(--text-light); margin-bottom: 12px;">Active Collaborators</h3>
+      <div class="collab-active-list" id="collab-active-list">
+        <!-- Collaborators list items injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Board Modal -->
+  <div class="modal-overlay hidden" id="add-board-modal">
+    <div class="modal-container glass small-modal">
+      <button class="modal-close" id="btn-close-add-board"><i data-lucide="x"></i></button>
+      <h2 class="modal-heading font-decorative">Create New Board</h2>
+      <form id="add-board-form" class="modal-form">
+        <div class="form-group">
+          <label for="board-title">Board Name</label>
+          <input type="text" id="board-title" required placeholder="e.g., Portfolio Redesign" />
+        </div>
+        <div class="form-group">
+          <label for="board-desc">Description</label>
+          <textarea id="board-desc" rows="3" required placeholder="Describe the concept of this board..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Board Accent Tone</label>
+          <div class="theme-colors-select">
+            <label class="color-checkbox" style="background-color: #FFB0B5;">
+              <input type="radio" name="board-theme" value="#FFB0B5" checked />
+              <span class="checkmark"></span>
+            </label>
+            <label class="color-checkbox" style="background-color: #FFC6CA;">
+              <input type="radio" name="board-theme" value="#FFC6CA" />
+              <span class="checkmark"></span>
+            </label>
+            <label class="color-checkbox" style="background-color: #FFD3D6;">
+              <input type="radio" name="board-theme" value="#FFD3D6" />
+              <span class="checkmark"></span>
+            </label>
+            <label class="color-checkbox" style="background-color: #F9DCC0;">
+              <input type="radio" name="board-theme" value="#F9DCC0" />
+              <span class="checkmark"></span>
+            </label>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Create Board</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Board Modal -->
+  <div class="modal-overlay hidden" id="edit-board-modal">
+    <div class="modal-container glass small-modal">
+      <button class="modal-close" id="btn-close-edit-board"><i data-lucide="x"></i></button>
+      <h2 class="modal-heading font-decorative">Edit Board Details</h2>
+      <form id="edit-board-form" class="modal-form">
+        <div class="form-group">
+          <label for="edit-board-title">Board Name</label>
+          <input type="text" id="edit-board-title" required placeholder="e.g., Portfolio Redesign" />
+        </div>
+        <div class="form-group">
+          <label for="edit-board-desc">Description</label>
+          <textarea id="edit-board-desc" rows="3" required placeholder="Describe the concept of this board..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Board Accent Tone</label>
+          <div class="theme-colors-select">
+            <label class="color-checkbox" style="background-color: #FFB0B5;">
+              <input type="radio" name="edit-board-theme" value="#FFB0B5" />
+              <span class="checkmark"></span>
+            </label>
+            <label class="color-checkbox" style="background-color: #FFC6CA;">
+              <input type="radio" name="edit-board-theme" value="#FFC6CA" />
+              <span class="checkmark"></span>
+            </label>
+            <label class="color-checkbox" style="background-color: #FFD3D6;">
+              <input type="radio" name="edit-board-theme" value="#FFD3D6" />
+              <span class="checkmark"></span>
+            </label>
+            <label class="color-checkbox" style="background-color: #F9DCC0;">
+              <input type="radio" name="edit-board-theme" value="#F9DCC0" />
+              <span class="checkmark"></span>
+            </label>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Save Board Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Media Importer Modal -->
+  <div class="modal-overlay hidden" id="media-importer-modal">
+    <div class="modal-container glass small-modal" style="width: 480px; padding: 28px;">
+      <button class="modal-close" id="btn-close-media-importer"><i data-lucide="x"></i></button>
+      <h2 class="modal-heading font-decorative">Import Pinterest Pin</h2>
+      <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.45;">Paste a public Pinterest Pin URL to extract its original image and details directly onto your board.</p>
+      
+      <!-- Pinterest Import Panel -->
+      <div class="media-tab-content" id="panel-pinterest">
+        <form id="pinterest-import-form" class="modal-form">
+          <div class="form-group">
+            <label for="pinterest-url-input">Pinterest Pin URL</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="url" id="pinterest-url-input" required placeholder="https://pinterest.com/pin/1234567890/" style="flex-grow: 1;" />
+              <button type="submit" class="btn btn-primary" style="height: 44px;">Fetch Pin</button>
+            </div>
+          </div>
+        </form>
+        
+        <div id="pinterest-preview-box" class="hidden" style="margin-top: 20px; padding: 16px; background: rgba(255,255,255,0.2); border-radius: 14px; border: 1px solid var(--panel-border); display: flex; gap: 16px; align-items: center;">
+          <img id="pinterest-preview-img" src="" style="width: 80px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05);" />
+          <div style="flex-grow: 1; overflow: hidden;">
+            <h4 id="pinterest-preview-title" style="font-size: 13px; font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;">Fetched Pin Title</h4>
+            <p id="pinterest-preview-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">Captured description...</p>
+            <button class="btn btn-primary" id="btn-pinterest-confirm-add" style="margin-top: 10px; height: 32px; font-size: 11px; padding: 0 12px; border-radius: 8px;">Import to Board</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collage Studio Modal -->
+  <div class="modal-overlay hidden" id="collage-studio-modal">
+    <div class="modal-container glass" style="width: 820px; padding: 32px; max-height: 90vh; overflow-y: auto;">
+      <button class="modal-close" id="btn-close-collage-studio"><i data-lucide="x"></i></button>
+      <h2 class="modal-heading font-decorative">Collage Exporter Studio</h2>
+      
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 28px;">
+        <!-- Left: Collage Frame Preview -->
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.03); border-radius: 18px; padding: 20px; border: 1px solid var(--panel-border);">
+          <!-- Collage Frame -->
+          <div id="collage-frame-target" class="collage-frame-story" style="position: relative; overflow: hidden; background: var(--bg-gradient); box-shadow: var(--shadow-lg); transition: all 0.3s ease;">
+            
+            <!-- Watermark -->
+            <div id="collage-watermark-stamp" style="position: absolute; bottom: 16px; right: 16px; font-size: 10px; font-weight: 750; color: var(--text-brand); z-index: 10; opacity: 0.85;">@yourusername</div>
+            
+            <!-- Date/Time Stamp -->
+            <div id="collage-date-stamp" style="position: absolute; top: 16px; left: 16px; font-size: 10px; font-weight: 750; color: var(--text-brand); z-index: 10; opacity: 0.85; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="wind" style="width: 10px; height: 10px;"></i>
+              <span>Pastelly Mood • July 2026</span>
+            </div>
+            
+            <!-- Cards Container -->
+            <div id="collage-cards-container" class="collage-grid-story">
+              <!-- Dynamically populated cards -->
+            </div>
+            
+            <!-- Dominant Palette Bar along the bottom -->
+            <div id="collage-palette-bar" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 16px; display: flex; z-index: 9;">
+              <!-- Color strips injected via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Studio Controls -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div class="form-group">
+            <label>Collage Format Presets</label>
+            <select id="collage-preset-select" style="cursor: pointer;">
+              <option value="story">Instagram Story (9:16 Frame)</option>
+              <option value="post">Instagram Post (1:1 Square)</option>
+              <option value="pin">Pinterest Pin (2:3 Portrait)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Studio Options</label>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+              <label style="display: flex; align-items: center; gap: 8px; text-transform: none; font-size: 12px; cursor: pointer;">
+                <input type="checkbox" id="toggle-collage-date" checked style="width: 16px; height: 16px; margin:0;" />
+                <span>Show date & logo stamp</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; text-transform: none; font-size: 12px; cursor: pointer;">
+                <input type="checkbox" id="toggle-collage-palette" checked style="width: 16px; height: 16px; margin:0;" />
+                <span>Show aesthetic color palette bar</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="collage-watermark-input">Watermark Handle</label>
+            <input type="text" id="collage-watermark-input" placeholder="e.g. @yourusername" value="@yourusername" />
+          </div>
+
+          <div class="form-group">
+            <button class="btn btn-primary btn-block" id="btn-build-collage-images">
+              <i data-lucide="dices"></i>
+              <span>Regenerate Collage Layout</span>
+            </button>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="btn btn-accent btn-block" id="btn-download-collage-studio">
+              <i data-lucide="download"></i>
+              <span>Download Collage</span>
+            </button>
+            <button class="btn btn-secondary btn-block" id="btn-send-to-phone-trigger">
+              <i data-lucide="smartphone"></i>
+              <span>Send to Phone</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Send to Phone (QR Code) Modal -->
+  <div class="modal-overlay hidden" id="phone-share-modal">
+    <div class="modal-container glass small-modal" style="text-align: center;">
+      <button class="modal-close" id="btn-close-phone-share"><i data-lucide="x"></i></button>
+      <h2 class="modal-heading font-decorative">Scan to Post</h2>
+      <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.45;">Scan this QR code with your smartphone camera to save the high-res collage and post it directly to Instagram Stories.</p>
+      
+      <!-- Spinner / QR Container -->
+      <div id="qr-loading-spinner" style="margin: 20px auto; width: 44px; height: 44px; border-radius: 50%; border: 4px solid var(--panel-border); border-top-color: var(--pastel-pink-highlight); animation: lofi-spin 1s infinite linear;"></div>
+      <div id="qr-code-wrapper" class="hidden" style="margin: 20px auto; background: white; padding: 16px; border-radius: 18px; display: inline-block; box-shadow: var(--shadow-md);">
+        <img id="qr-code-image" src="" alt="Dynamic QR Code Link" style="width: 150px; height: 150px;" />
+      </div>
+
+      <div style="margin-top: 10px; font-size: 11px; color: var(--text-light); word-break: break-all;">
+        <a id="phone-share-temp-link" href="#" target="_blank" style="color: var(--pastel-pink-highlight); text-decoration: underline;">https://file.io/temp-image-link</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mood Log Modal -->
+  <div class="modal-overlay hidden" id="mood-log-modal">
+    <div class="modal-container glass small-modal" style="padding: 28px;">
+      <button class="modal-close" id="btn-close-mood-log"><i data-lucide="x"></i></button>
+      <h2 class="modal-heading font-decorative" id="mood-log-title" style="font-size: 20px; margin-bottom: 8px;">Log Daily Mood</h2>
+      <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 20px;">Select a cozy vibe color, assign tags, and save a note for this date.</p>
+      
+      <form id="mood-log-form" class="modal-form">
+        <input type="hidden" id="mood-log-date" />
+        
+        <!-- Mood Vibe Picker buttons -->
+        <div class="form-group">
+          <label>Select Mood Vibe</label>
+          <div style="display: flex; gap: 6px; justify-content: space-between; margin-top: 6px;">
+            <button type="button" class="mood-picker-btn" data-mood="Cozy" data-color="#FFE5E7" style="background:#FFE5E7; border: 1.5px solid var(--panel-border); flex: 1; height: 32px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: 750; color: var(--text-brand);">Cozy</button>
+            <button type="button" class="mood-picker-btn" data-mood="Dreamy" data-color="#FFC6CA" style="background:#FFC6CA; border: 1.5px solid var(--panel-border); flex: 1; height: 32px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: 750; color: var(--text-brand);">Dreamy</button>
+            <button type="button" class="mood-picker-btn" data-mood="Creative" data-color="#FFD3D6" style="background:#FFD3D6; border: 1.5px solid var(--panel-border); flex: 1; height: 32px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: 750; color: var(--text-brand);">Creative</button>
+            <button type="button" class="mood-picker-btn" data-mood="Mellow" data-color="#F9DCC0" style="background:#F9DCC0; border: 1.5px solid var(--panel-border); flex: 1; height: 32px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: 750; color: var(--text-brand);">Mellow</button>
+            <button type="button" class="mood-picker-btn" data-mood="Vibrant" data-color="#FFB0B5" style="background:#FFB0B5; border: 1.5px solid var(--panel-border); flex: 1; height: 32px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: 750; color: var(--text-brand);">Vibrant</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="mood-tag-input">Aesthetic Tag</label>
+          <input type="text" id="mood-tag-input" required placeholder="e.g., Coding, Designing, Rest" />
+        </div>
+
+        <div class="form-group">
+          <label for="mood-note-input">Vibe Note</label>
+          <textarea id="mood-note-input" rows="3" placeholder="Write down your vibes or what inspired you..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">Log Vibe to Calendar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Auth Authentication Login/Signup Modal Overlay Screen -->
+  <div class="modal-overlay" id="auth-modal" style="background: linear-gradient(135deg, #FFE5E7 0%, #FFD3D6 50%, #F9DCC0 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;">
+    <div class="modal-container glass" style="width: 420px; padding: 32px; box-shadow: var(--shadow-lg); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.45); background: rgba(255, 255, 255, 0.25);">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 class="font-decorative" style="font-size: 36px; color: var(--text-brand); margin-bottom: 6px;">Pastelly</h1>
+        <p style="font-size: 13px; color: var(--text-secondary); font-weight: 500;">Your Gravity-Free Canvas</p>
+      </div>
+
+      <!-- Login Container Page -->
+      <div id="auth-login-container">
+        <!-- Social Logins -->
+        <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 20px;">
+          <button id="btn-google-login" class="btn btn-outline" style="flex:1; gap:4px; font-size:10px; height:34px; padding:0;">
+            <i data-lucide="chrome" style="width:12px; height:12px; color:#DE4032;"></i> Google
+          </button>
+          <button class="btn btn-outline" style="flex:1; gap:4px; font-size:10px; height:34px; padding:0;" onclick="showToast('Facebook login simulated!')">
+            <i data-lucide="facebook" style="width:12px; height:12px; color:#3B5998;"></i> Facebook
+          </button>
+          <button class="btn btn-outline" style="flex:1; gap:4px; font-size:10px; height:34px; padding:0;" onclick="showToast('Pinterest login simulated!')">
+            <i data-lucide="compass" style="width:12px; height:12px; color:#BD081C;"></i> Pinterest
+          </button>
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 12px; margin-top: -12px;">
+          <a href="#" id="link-configure-google-id" style="font-size: 9px; color: var(--text-light); text-decoration: underline;">Configure Google Client ID</a>
+        </div>
+
+        <div style="display: flex; align-items: center; text-align: center; margin: 15px 0; color: var(--text-light); font-size: 10px;">
+          <hr style="flex: 1; border: none; border-top: 1px solid var(--panel-border); margin: 0 10px;" />
+          <span>or log in with email</span>
+          <hr style="flex: 1; border: none; border-top: 1px solid var(--panel-border); margin: 0 10px;" />
+        </div>
+
+        <!-- Login Form (Only Email & Password) -->
+        <form id="auth-login-form">
+          <div class="form-group">
+            <label for="login-email">Email Address</label>
+            <input type="email" id="login-email" required placeholder="name@example.com" style="width: 100%;" />
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" required placeholder="••••••••" style="width: 100%;" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px; height: 44px; font-size: 13px;">Log In to Canvas</button>
+        </form>
+
+        <p style="font-size: 11px; text-align: center; color: var(--text-secondary); margin-top: 16px;">
+          Don't have an account? <span id="link-go-to-signup" style="color: var(--pastel-pink-highlight); font-weight: 750; cursor: pointer; text-decoration: underline;">Sign Up</span>
+        </p>
+      </div>
+
+      <!-- Signup Container Page -->
+      <div id="auth-signup-container" class="hidden">
+        <!-- Signup Form (Profile Picture, Name, Email, Password) -->
+        <form id="auth-signup-form">
+          <div class="form-group" style="text-align: center; margin-bottom: 15px;">
+            <label for="signup-avatar-input" style="cursor: pointer; display: inline-flex; flex-direction: column; align-items: center; gap: 6px;">
+              <img id="signup-avatar-preview" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80" style="width: 58px; height: 58px; border-radius: 50%; border: 2.5px solid var(--pastel-pink-highlight); object-fit: cover; box-shadow: var(--shadow-sm);" />
+              <span style="font-size: 9px; color: var(--pastel-pink-highlight); font-weight: 750; text-transform: uppercase;">Upload Profile Pic</span>
+            </label>
+            <input type="file" id="signup-avatar-input" accept="image/*" style="display:none;" />
+          </div>
+
+          <div class="form-group">
+            <label for="signup-name">Your Name</label>
+            <input type="text" id="signup-name" required placeholder="Cozy Designer" style="width: 100%;" />
+          </div>
+          <div class="form-group">
+            <label for="signup-email">Email Address</label>
+            <input type="email" id="signup-email" required placeholder="name@example.com" style="width: 100%;" />
+          </div>
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" required placeholder="••••••••" style="width: 100%;" />
+            <p style="font-size: 8px; color: var(--text-light); line-height: 1.35; margin-top: 4px;">Must be 8-12 characters, including uppercase, lowercase, and a special character.</p>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px; height: 44px; font-size: 13px;">Sign Up & Start Canvas</button>
+        </form>
+
+        <p style="font-size: 11px; text-align: center; color: var(--text-secondary); margin-top: 16px;">
+          Already have an account? <span id="link-go-to-login" style="color: var(--pastel-pink-highlight); font-weight: 750; cursor: pointer; text-decoration: underline;">Log In</span>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="index.js"></script>
+</body>
+</html>
