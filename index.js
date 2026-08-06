@@ -3282,6 +3282,10 @@ function fetchLiveWeather(lat, lon) {
 
 // 9. Bootstrap & Physics overrides
 function startPastelly() {
+  if (window.location.protocol === "file:") {
+    alert("🌸 Warning: You have opened index.html directly from your disk (file://).\n\nPlease access the web application through your running local server address:\nhttp://localhost:8080");
+  }
+
   initSession();
   
   resizeBgCanvas();
